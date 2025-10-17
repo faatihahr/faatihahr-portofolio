@@ -77,7 +77,6 @@ app.use(express.json());
 
 //index route
 app.get('/', async (req, res) => {
-  try {
     const projects = await dataHandler.getAllProjects();
     const experiences = await dataHandler.getAllExperiences();
     res.render('index', {
@@ -85,12 +84,7 @@ app.get('/', async (req, res) => {
       projects,
       experiences
     });
-  } catch (err) {
-    console.error('Error loading index page:', err);
-    res.status(500).send('Internal Server Error');
-  }
 });
-
 // Login routes
 app.get('/login', (req, res) => {
   res.render('login', { layout: false, title: 'Login ', activePage: 'login' });
