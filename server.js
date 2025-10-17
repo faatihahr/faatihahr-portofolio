@@ -9,6 +9,7 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
 const session = require('express-session');
+const { Result } = require('pg');
 
 // Set up Handlebars as the view engine
 app.engine('hbs', engine({
@@ -76,13 +77,18 @@ app.use(express.json());
 
 //index route
 app.get('/', async (req, res) => {
-  const projects = await dataHandler.getAllProjects();
-  const experiences = await dataHandler.getAllExperiences();
-  res.render('index', {
-    title: 'Faatihah Rahmatillah Portfolio',
-    projects,
-    experiences
-  });
+  try {
+    const projects = await dataHandler.getAllProjects();
+    const experiences = await dataHandler.getAllExperiences();
+    res.render('index', {
+      title: 'Faatihah Rahmatillah Portfolio',
+      projects,
+      experiences
+    });
+  } catch (err) {
+    console.error('Error loading index page:', err);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
 // Login routes
@@ -260,16 +266,18 @@ app.use((err, req, res, next) => {
   res.status(500).send('<h1>500 - Internal Server Error</h1>');
 });
 
-// Start the server
-app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
-  pool.query('SELECT NOW()', (err, result) => {
-    if (err) {
-      console.error('❌ Database connection failed:', err.message);
-    } else {
-      console.log('✅ Database connected! Current time:', result.rows[0].now);
-    }
-  });
-});
-
+//start server
+if (require.main === module){
+  app.listen(port, () => {
+    console.log('Server in running at http:localhost:${port}');
+    pool.query('SELECET NOW()', (err, result) => {
+      if (err) {
+        console.error('Database connection failed:', err.message);
+      }else {
+        console.log('Database connected! Current time:', result.row[0].now);
+      }
+    })
+  })
+}
 module.exports = app;
+
