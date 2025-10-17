@@ -77,6 +77,7 @@ app.use(express.json());
 
 //index route
 app.get('/', async (req, res) => {
+  try {
     const projects = await dataHandler.getAllProjects();
     const experiences = await dataHandler.getAllExperiences();
     res.render('index', {
@@ -84,6 +85,11 @@ app.get('/', async (req, res) => {
       projects,
       experiences
     });
+  } catch (err) {
+    console.error('Error loading index page:', err);
+    console.error('Database URL:', process.env.DATABASE_URL ? 'Set' : 'Not set');
+    res.status(500).send('Internal Server Error');
+  }
 });
 // Login routes
 app.get('/login', (req, res) => {
