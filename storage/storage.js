@@ -1,24 +1,8 @@
-// storage.js
 const multer = require('multer');
-const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const { put } = require('@vercel/blob');
 
-// Konfigurasi Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
-
-// Konfigurasi penyimpanan Cloudinary
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'portfolio-uploads',
-    allowed_formats: ['jpg', 'png', 'jpeg', 'gif'],
-    transformation: [{ width: 1000, height: 1000, crop: 'limit' }]
-  }
-});
+// Konfigurasi penyimpanan memory
+const storage = multer.memoryStorage();
 
 // Filter tipe file
 function fileFilter(req, file, cb) {
@@ -32,4 +16,12 @@ function fileFilter(req, file, cb) {
 
 const upload = multer({ storage, fileFilter });
 
-module.exports = upload;
+// Fungsi untuk upload ke Vercel Blob
+async function uploadToBlob(file) {
+  const blob = await put(`uploads/${Date.now()}-${file.originalname}`, file.buffer, {
+    access: 'public',
+  });
+  return blob.url;
+}
+
+module.exports = { upload, uploadToBlob };

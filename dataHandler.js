@@ -5,7 +5,7 @@ exports.createProject = async (data) => {
   const { title, description, image, category, link, status } = data;
   await pool.query(
     'INSERT INTO projects (title, description, image, category, link, status, created_at) VALUES ($1, $2, $3, $4, $5, $6, NOW())',
-    [title, description, image, category, link, status]
+    [title, description, image || null, category, link, status]
   );
 };
 
@@ -37,7 +37,7 @@ exports.createExperience = async (data) => {
   const { job_name, position, company, logo, start_date, end_date, is_current, description, skills } = data;
   await pool.query(
     'INSERT INTO experiences (job_name, position, company, logo, start_date, end_date, is_current, description, skills, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())',
-    [job_name, position, company, logo, start_date, end_date, is_current, description, skills]
+    [job_name, position, company, logo || null, start_date, end_date, is_current, description, skills]
   );
 };
 

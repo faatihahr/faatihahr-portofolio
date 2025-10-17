@@ -3,7 +3,7 @@ const express = require('express');
 const app = express();
 const { engine } = require('express-handlebars');
 const port = process.env.PORT || 3000;
-const upload = require('./storage/storage');
+const { upload, uploadToBlob } = require('./storage/storage');
 const dataHandler = require('./dataHandler');
 const path = require('path');
 const cookieParser = require('cookie-parser');
@@ -41,7 +41,6 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/upload', express.static(path.join(__dirname, 'upload')));
 
 // Logging middleware
 app.use((req, res, next) => {
@@ -164,7 +163,10 @@ app.get("/project-form", requireAdmin, (req, res) => {
 
 // Proses tambah project
 app.post("/dashboard/project/add", requireAdmin, upload.single('image'), async (req, res) => {
-  const image = req.file ? req.file.path : '';
+  let image = null;
+  if (req.file) {
+    image = await uploadToBlob(req.file);
+  }
   await dataHandler.createProject({ ...req.body, image });
   res.redirect("/dashboard");
 });
@@ -178,7 +180,10 @@ app.get('/dashboard/project/detail/:id', requireAdmin, async (req, res) => {
 
 // Proses update project
 app.post('/dashboard/project/update/:id', requireAdmin, upload.single('image'), async (req, res) => {
-  const image = req.file ? req.file.path : req.body.oldImage;
+  let image = req.body.oldImage;
+  if (req.file) {
+    image = await uploadToBlob(req.file);
+  }
   await dataHandler.updateProject(req.params.id, { ...req.body, image });
   res.json({ message: 'Proyek berhasil diperbarui' });
 });
@@ -201,7 +206,10 @@ app.get("/dashboard/experience/add", requireAdmin, (req, res) => {
 
 // Proses tambah experience
 app.post("/dashboard/experience/add", requireAdmin, upload.single('logo'), async (req, res) => {
-  const logo = req.file ? req.file.path : '';
+  let logo = null;
+  if (req.file) {
+    logo = await uploadToBlob(req.file);
+  }
 
   let skills = req.body.skills;
   if (Array.isArray(skills)) skills = skills.join(',');
@@ -218,7 +226,10 @@ app.get('/dashboard/experience/detail/:id', requireAdmin, async (req, res) => {
 
 // Proses update experience
 app.post('/dashboard/experience/update/:id', requireAdmin, upload.single('logo'), async (req, res) => {
-  const logo = req.file ? req.file.path : req.body.oldLogo;
+  let logo = req.body.oldLogo;
+  if (req.file) {
+    logo = await uploadToBlob(req.file);
+  }
   let skills = req.body.skills;
   if (Array.isArray(skills)) skills = skills.join(',');
   await dataHandler.updateExperience(req.params.id, { ...req.body, logo, skills });
@@ -250,17 +261,15 @@ app.use((err, req, res, next) => {
 });
 
 // Start the server
-if (require.main === module) {
-  app.listen(port, () => {
-    console.log(`Server is running at http://localhost:${port}`);
-    pool.query('SELECT NOW()', (err, result) => {
-      if (err) {
-        console.error('❌ Database connection failed:', err.message);
-      } else {
-        console.log('✅ Database connected! Current time:', result.rows[0].now);
-      }
-    });
+app.listen(port, () => {
+  console.log(`Server is running at http://localhost:${port}`);
+  pool.query('SELECT NOW()', (err, result) => {
+    if (err) {
+      console.error('❌ Database connection failed:', err.message);
+    } else {
+      console.log('✅ Database connected! Current time:', result.rows[0].now);
+    }
   });
-}
+});
 
 module.exports = app;
