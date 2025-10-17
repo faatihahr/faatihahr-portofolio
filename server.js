@@ -9,6 +9,7 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
 const session = require('express-session');
+const PgSession = require('connect-pg-simple')(session);
 const { Result } = require('pg');
 
 // Set up Handlebars as the view engine
@@ -55,10 +56,19 @@ app.use(cookieParser());
 
 // Middleware session
 app.use(session({
+  store: new PgSession({
+    pool: pool,
+    tableName: 'session'
+  }),
   secret: 'secretKey123',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 1000 * 60 * 60 * 24 * 7 }
+  cookie: {
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: 'lax'
+  }
 }));
 
 // Middleware untuk cek admin
@@ -77,7 +87,6 @@ app.use(express.json());
 
 //index route
 app.get('/', async (req, res) => {
-  try {
     const projects = await dataHandler.getAllProjects();
     const experiences = await dataHandler.getAllExperiences();
     res.render('index', {
@@ -85,11 +94,6 @@ app.get('/', async (req, res) => {
       projects,
       experiences
     });
-  } catch (err) {
-    console.error('Error loading index page:', err);
-    console.error('Database URL:', process.env.DATABASE_URL ? 'Set' : 'Not set');
-    res.status(500).send('Internal Server Error');
-  }
 });
 // Login routes
 app.get('/login', (req, res) => {
